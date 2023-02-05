@@ -11,13 +11,13 @@ type CourseGrades = {
 
 type Student = {
   name: string;
-  weights: Array<CourseGrades>;
+  weights: CourseGrades;
   currentAverage: number;
 };
 
 type NewStudentRequest = {
   name: string;
-  weights: Array<CourseGrades>;
+  weights: CourseGrades;
 };
 
 type AssignmentGrade = {
@@ -37,3 +37,7 @@ type FinalExamScores = {
 };
 
 type StudentManager = Record<string, Student>;
+
+type StudentNameParam = {
+  studentName: string;
+};
