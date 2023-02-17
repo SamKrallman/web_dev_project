@@ -41,3 +41,8 @@ type StudentManager = Record<string, Student>;
 type StudentNameParam = {
   studentName: string;
 };
+
+type GradeUpdateParams = {
+  studentName: string;
+  assignmentName: string;
+};

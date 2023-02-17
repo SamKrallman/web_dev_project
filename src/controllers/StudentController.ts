@@ -58,4 +58,116 @@ function getStudentByName(req: Request, res: Response): void {
   res.json(student);
 }
 
-export default { createNewStudent, getStudentByName };
+function calculateFinalExamScore(
+  currentAverage: number,
+  finalExamWeight: number,
+  targetScore: number
+): number {
+  // TODO: Calculate the final exam score needed to get the targetScore in the class
+  const restOfWeight: number = 100 - finalExamWeight;
+  const realGrade: number = currentAverage * (restOfWeight / 100);
+  const percentOff: number = (targetScore - realGrade) * (finalExamWeight / 100);
+  const finalScore: number = targetScore + percentOff * 2;
+  return finalScore;
+}
+
+function getFinalExamScores(req: Request, res: Response): void {
+  const { studentName } = req.params as StudentNameParam;
+  const student = getStudent(studentName);
+
+  if (!student) {
+    res.sendStatus(404); // student was not in dataset
+    return;
+  }
+
+  const { currentAverage } = student;
+  const { finalExamWeight } = student.weights;
+
+  const neededForA: number = calculateFinalExamScore(currentAverage, finalExamWeight, 90);
+  const neededForB: number = calculateFinalExamScore(currentAverage, finalExamWeight, 80);
+  const neededForC: number = calculateFinalExamScore(currentAverage, finalExamWeight, 70);
+  const neededForD: number = calculateFinalExamScore(currentAverage, finalExamWeight, 60);
+
+  const newGrades: FinalExamScores = { neededForA, neededForB, neededForC, neededForD };
+
+  res.json(newGrades);
+}
+
+function getLetterGrade(score: number): string {
+  // TODO: Return the appropriate letter grade
+  let letterGrade: string;
+  if (score >= 60 && score <= 69) {
+    letterGrade = 'D';
+  } else if (score >= 70 && score <= 79) {
+    letterGrade = 'C';
+  } else if (score >= 80 && score <= 89) {
+    letterGrade = 'B';
+  } else {
+    letterGrade = 'A';
+  }
+  return letterGrade;
+}
+
+function calcFinalScore(req: Request, res: Response): void {
+  const { studentName } = req.params as StudentNameParam;
+  const student = getStudent(studentName);
+
+  if (!student) {
+    res.sendStatus(404); // student was not in dataset
+    return;
+  }
+
+  const { grade } = req.body as AssignmentGrade;
+  const { currentAverage } = student;
+  const { weights } = student;
+
+  const overallScore = calculateFinalExamScore(currentAverage, weights.finalExamWeight, grade);
+  const letterGrade = getLetterGrade(overallScore);
+  const finalScore: FinalGrade = { overallScore, letterGrade };
+
+  res.json(finalScore);
+}
+
+function updateStudentGrade(
+  studentName: string,
+  assignmentName: string,
+  newGrade: number
+): boolean {
+  const student = getStudent(studentName);
+  if (!student) {
+    return false; // exits immediately
+  }
+
+  const assignment = student.weights.assignmentWeights.find(({ name }) => name === assignmentName);
+
+  if (!assignment) {
+    return false;
+  }
+
+  assignment.grade = newGrade;
+
+  student.currentAverage = calculateAverage(student.weights);
+  return true;
+}
+
+function updateGrade(req: Request, res: Response): void {
+  const { studentName, assignmentName } = req.params as GradeUpdateParams;
+  const { grade } = req.body as AssignmentGrade;
+
+  updateStudentGrade(studentName, assignmentName, grade);
+
+  if (!studentName || !assignmentName) {
+    res.sendStatus(404);
+    return;
+  }
+
+  res.sendStatus(200);
+}
+
+export default {
+  createNewStudent,
+  getStudentByName,
+  getFinalExamScores,
+  calcFinalScore,
+  updateGrade,
+};
